@@ -14,7 +14,6 @@ import robosuite.utils
 import robosuite.utils.transform_utils
 from openpi_client import image_tools
 
-from playground import RENDER_ONSCREEN
 import utils
 
 # Libero
