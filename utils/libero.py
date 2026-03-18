@@ -71,6 +71,34 @@ def load_task(benchmark_suite: str, task_id: int) -> Tuple[Benchmark, Task]:
 
 
 def load_tasks(benchmark_suite: str) -> Generator[Tuple[Benchmark, Task], None, None]:
+    """ Returns all tasks from the selected benchmark
+
+        This functions generates an iterable list of tasks from the specific benchmark
+
+        Parameters
+        -------------- 
+        benchmark_suite: str
+            The benchmark/task suite to load. Available benchmarks are:
+
+                `libero_spatial`
+                    for spatial understaning, same task different objects
+                `libero_object`
+                    different layout with same objects
+                `libero_goal`
+                    different goal, same layout and objs
+                `libero_90` 
+                    training set of `libero_100`
+                `libero_10`
+                    eval set of `libero_100`
+                `libero_100`
+                    different objects, layouts and scenes
+
+        Returns
+        -------
+        Every iteration returns a tuple (Benchmark, Task)
+
+    """
+
     # Return the first task
     task_suite, task = load_task(benchmark_suite, 0)
     yield task_suite, task
@@ -156,7 +184,11 @@ def save_video(frame_buffer: List[numpy.ndarray], path="", filename = "playback.
             The number of frames per second to save. Technically is should depend on inference time of the model,
             so default value of 30 will probably speed up the video a little
     """
+
     fullpath = os.path.join(path, filename)
+    # Construct folders if they don't exist
+    os.makedirs(os.path.dirname(fullpath), exist_ok=True)
+
     video_writer = imageio.get_writer(fullpath, fps=fps)
     for frame in frame_buffer:
         video_writer.append_data(frame)
