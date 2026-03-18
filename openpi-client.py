@@ -174,7 +174,7 @@ def main():
             action: numpy.ndarray
             for action in action_chunk:
                 if not HEADLESS: task_env.env.render()
-                if VIDEO: frame_buffer.append(obs["agentview_image"][::-1])
+                if VIDEO: frame_buffer.append(front_img)
                 if step % 10 == 0: print("*", end="", flush=True)
                 obs, reward, done, info = task_env.step(action.tolist())
                 # Increase step
