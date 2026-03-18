@@ -1,5 +1,6 @@
 import collections
 import os
+from pickle import FALSE
 from typing import Dict, Generator, List, Tuple, Type
 
 import imageio
@@ -20,14 +21,14 @@ import utils
 BENCHMARK_SUITE = "libero_spatial" # one from benchmark.BENCHMARK_MAPPING
 
 # Envs
-RENDER_ONSCREEN = True
+RENDER_ONSCREEN = False
 CAMERA_NAME = "agentview"
 CAMERA_SIZE = 224
 MAX_STEPS = 600
 
 # Video
-VIDEO = False
-VIDEO_PATH = "./videos/openpi/"
+VIDEO = True
+VIDEO_PATH = f"./videos/openpi/{BENCHMARK_SUITE}"
 
 # Connection
 TITAN_IP = "titan2.dei.unipd.it"
@@ -86,15 +87,19 @@ def main():
             action: numpy.ndarray
             for action in action_chunk:
                 if RENDER_ONSCREEN: task_env.env.render()
-                if VIDEO: frame_buffer.append(front_img)
+                if VIDEO: 
+                    # Extract image from every obs in chuck step
+                    front_img = numpy.ascontiguousarray(obs["agentview_image"][::-1, ::-1])
+                    frame_buffer.append(front_img)
                 if step % 10 == 0: print("*", end="", flush=True)
                 obs, reward, done, info = task_env.step(action.tolist())
                 # Increase step
                 step +=1
 
+        print()
         task_env.close()
 
-        if VIDEO: utils.libero.save_video(frame_buffer, filename=f"{task.name}.mp4")
+        if VIDEO: utils.libero.save_video(frame_buffer, path=VIDEO_PATH, filename=f"{task.name}.mp4")
         
 if __name__ == "__main__":
     main()
