@@ -1,13 +1,6 @@
 import collections
-import os
-from tkinter.tix import MAX
-from typing import Dict, Generator, List, Tuple, Type
+from typing import List
 
-from git import HEAD, Tree
-import imageio
-from libero.libero import benchmark
-from libero.libero.benchmark import Benchmark, Task
-from libero.libero.envs.env_wrapper import ControlEnv, OffScreenRenderEnv
 import numpy
 
 import utils
