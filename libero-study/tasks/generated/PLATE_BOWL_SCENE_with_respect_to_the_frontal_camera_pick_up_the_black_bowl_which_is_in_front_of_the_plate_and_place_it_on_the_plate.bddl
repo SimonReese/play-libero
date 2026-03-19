@@ -1,11 +1,11 @@
 (define (problem LIBERO_Kitchen_Tabletop_Manipulation)
   (:domain robosuite)
-  (:language Pick up all black bowls and place them on the plate)
+  (:language With respect to the frontal camera pick up the black bowl which is in front of the plate and place it on the plate)
     (:regions
       (plate_region
           (:target kitchen_table)
           (:ranges (
-              (-0.0001 -0.0001 0.0001 0.0001)
+              (-0.2001 -0.0001 -0.19990000000000002 0.0001)
             )
           )
           (:yaw_rotation (
@@ -16,7 +16,7 @@
       (bowl_region_1
           (:target kitchen_table)
           (:ranges (
-              (-0.0001 -0.15009999999999998 0.0001 -0.1499)
+              (-0.2001 -0.2001 -0.19990000000000002 -0.19990000000000002)
             )
           )
           (:yaw_rotation (
@@ -27,7 +27,7 @@
       (bowl_region_2
           (:target kitchen_table)
           (:ranges (
-              (-0.0001 0.1499 0.0001 0.15009999999999998)
+              (-0.2001 0.19990000000000002 -0.19990000000000002 0.2001)
             )
           )
           (:yaw_rotation (
@@ -38,7 +38,7 @@
       (bowl_region_3
           (:target kitchen_table)
           (:ranges (
-              (0.1499 -0.0001 0.15009999999999998 0.0001)
+              (-0.0001 -0.0001 0.0001 0.0001)
             )
           )
           (:yaw_rotation (
@@ -71,7 +71,7 @@
   )
 
   (:goal
-    (And (On akita_black_bowl_1 plate_1) (On akita_black_bowl_2 plate_1) (On akita_black_bowl_3 plate_1))
+    (And (On akita_black_bowl_3 plate_1))
   )
 
 )

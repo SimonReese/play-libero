@@ -12,7 +12,7 @@ from libero.libero.utils.task_generation_utils import TASK_INFO, TaskInfoTuple, 
 import numpy
 
 
-GENERATED_BDDL_PATH = "/home/peraro/source/play-libero/libero-study/tasks"
+GENERATED_BDDL_PATH = "/home/peraro/source/play-libero/libero-study/tasks/generated/"
 
 """print("Objects:", OBJECTS_DICT.keys())
 print("Predicates:", VALIDATE_PREDICATE_FN_DICT.keys())"""
@@ -336,7 +336,7 @@ class PlateCookieScene(InitialSceneTemplates):
         return all_goals
     
 @register_mu(scene_type="kitchen")
-class BowlCookieScene(InitialSceneTemplates):
+class PlateBowlScene(InitialSceneTemplates):
     """
         A scene with three cookiebox and a central plate
 
@@ -363,31 +363,32 @@ class BowlCookieScene(InitialSceneTemplates):
         )
         
     def define_regions(self):
+        
+        OFFSET = 0.2
 
         plate_region = self.get_region_dict(
-            region_centroid_xy=[0.0, 0],
+            region_centroid_xy=[-OFFSET, 0],
             region_name="plate_region",
             target_name=self.workspace_name,
             region_half_len=0.0001
         )
-
-        OFFSET = 0.15
+        
         bowl_region_1 = self.get_region_dict(
-            region_centroid_xy=[0.0, -OFFSET],
+            region_centroid_xy=[-OFFSET, -OFFSET],
             region_name="bowl_region_1",
             target_name=self.workspace_name,
             region_half_len=0.0001
         )
 
         bowl_region_2 = self.get_region_dict(
-            region_centroid_xy=[0, OFFSET],
+            region_centroid_xy=[-OFFSET, OFFSET],
             region_name="bowl_region_2",
             target_name=self.workspace_name,
             region_half_len=0.0001
         )
 
         bowl_region_3 = self.get_region_dict(
-            region_centroid_xy=[OFFSET, 0],
+            region_centroid_xy=[0, 0],
             region_name="bowl_region_3",
             target_name=self.workspace_name,
             region_half_len=0.0001
@@ -427,7 +428,24 @@ class BowlCookieScene(InitialSceneTemplates):
     def scene_instructions(cls) -> List[str]:
         """ Returns available task instructions for this scene"""
         return [
-            "Pick up all black bowls and place them on the plate"
+            "Pick up all black bowls and place them on the plate",  # Goal 1
+
+            "Pick up the central black bowl and place it on the plate", # Goal 2
+            "Pick up the furthest black bowl from robot and place it on the plate", # Goal 2
+            "With respect to the frontal camera pick up the black bowl which is in front of the plate and place it on the plate", # Goal 2
+
+            "Pick up the left black bowl with respect to the frontal camera and place it on the plate", # Goal 3
+            "Pick up the right black bowl with respect to the robot and place it on the plate", # Goal 3
+
+            "With respect to the frontal camera pick up the black bowl on the left of the plate and place it on the plate", # Goal 3
+            "With respect to the robot pick up the black bowl on the right of the plate and place it on the plate", # Goal 3
+
+            "Pick up the right black bowl with respect to the frontal camera and place it on the plate", # Goal 4
+            "Pick up the left black bowl with respect to the robot and place it on the plate", # Goal 4
+
+            "With respect to the frontal camera pick up the black bowl on the right of the plate and place it on the plate", # Goal 4
+            "With respect to the robot pick up the black bowl on the left of the plate and place it on the plate", # Goal 4
+
         ]
     
     @classmethod
@@ -440,9 +458,119 @@ class BowlCookieScene(InitialSceneTemplates):
             ("On", "akita_black_bowl_2", "plate_1"),
             ("On", "akita_black_bowl_3", "plate_1"),
         ]
+
+        # Instruction 2, 3, 4
+        goal_2: List[Tuple[str, str, str]] = [
+            ("On", "akita_black_bowl_3", "plate_1"),
+        ]
+
+        # Instruction 5, 8
+        goal_3: List[Tuple[str, str, str]] = [
+            ("On", "akita_black_bowl_1", "plate_1"),
+        ]
+
+        # Instruction 6
+        goal_4: List[Tuple[str, str, str]] = [
+            ("On", "akita_black_bowl_2", "plate_1"),
+        ]
         
         all_goals.append(goal_1)
+        all_goals.append(goal_2)
+        all_goals.append(goal_3)
+        all_goals.append(goal_4)
         return all_goals
+    
+    @classmethod
+    def register_all(cls):
+        # Goal 1
+        register_task_info(
+            PlateBowlScene.scene_instructions()[0], # type: ignore
+            PlateBowlScene.get_scene_name(), # type: ignore
+            objects_of_interest=["akita_black_bowl_1", "akita_black_bowl_2", "akita_black_bowl_3"],
+            goal_states=PlateBowlScene.goal_states()[0] # type:ignore
+        )
+
+        # Goal 2 -------------------------
+        register_task_info(
+            PlateBowlScene.scene_instructions()[1], # type: ignore
+            PlateBowlScene.get_scene_name(), # type: ignore
+            objects_of_interest=["akita_black_bowl_1", "akita_black_bowl_2", "akita_black_bowl_3"],
+            goal_states=PlateBowlScene.goal_states()[1] # type:ignore
+        )
+
+        register_task_info(
+            PlateBowlScene.scene_instructions()[2], # type: ignore
+            PlateBowlScene.get_scene_name(), # type: ignore
+            objects_of_interest=["akita_black_bowl_1", "akita_black_bowl_2", "akita_black_bowl_3"],
+            goal_states=PlateBowlScene.goal_states()[1] # type:ignore
+        )
+
+        register_task_info(
+            PlateBowlScene.scene_instructions()[3], # type: ignore
+            PlateBowlScene.get_scene_name(), # type: ignore
+            objects_of_interest=["akita_black_bowl_1", "akita_black_bowl_2", "akita_black_bowl_3"],
+            goal_states=PlateBowlScene.goal_states()[1] # type:ignore
+        )
+
+        # Goal 3 -------------------------
+        register_task_info(
+            PlateBowlScene.scene_instructions()[4], # type: ignore
+            PlateBowlScene.get_scene_name(), # type: ignore
+            objects_of_interest=["akita_black_bowl_1", "akita_black_bowl_2", "akita_black_bowl_3"],
+            goal_states=PlateBowlScene.goal_states()[2] # type:ignore
+        )
+
+        register_task_info(
+            PlateBowlScene.scene_instructions()[5], # type: ignore
+            PlateBowlScene.get_scene_name(), # type: ignore
+            objects_of_interest=["akita_black_bowl_1", "akita_black_bowl_2", "akita_black_bowl_3"],
+            goal_states=PlateBowlScene.goal_states()[2] # type:ignore
+        )
+
+        register_task_info(
+            PlateBowlScene.scene_instructions()[6], # type: ignore
+            PlateBowlScene.get_scene_name(), # type: ignore
+            objects_of_interest=["akita_black_bowl_1", "akita_black_bowl_2", "akita_black_bowl_3"],
+            goal_states=PlateBowlScene.goal_states()[2] # type:ignore
+        )
+
+        register_task_info(
+            PlateBowlScene.scene_instructions()[7], # type: ignore
+            PlateBowlScene.get_scene_name(), # type: ignore
+            objects_of_interest=["akita_black_bowl_1", "akita_black_bowl_2", "akita_black_bowl_3"],
+            goal_states=PlateBowlScene.goal_states()[2] # type:ignore
+        )
+
+        # Goal 4 -------------------------
+        register_task_info(
+            PlateBowlScene.scene_instructions()[8], # type: ignore
+            PlateBowlScene.get_scene_name(), # type: ignore
+            objects_of_interest=["akita_black_bowl_1", "akita_black_bowl_2", "akita_black_bowl_3"],
+            goal_states=PlateBowlScene.goal_states()[3] # type:ignore
+        )
+
+        register_task_info(
+            PlateBowlScene.scene_instructions()[9], # type: ignore
+            PlateBowlScene.get_scene_name(), # type: ignore
+            objects_of_interest=["akita_black_bowl_1", "akita_black_bowl_2", "akita_black_bowl_3"],
+            goal_states=PlateBowlScene.goal_states()[3] # type:ignore
+        )
+
+        register_task_info(
+            PlateBowlScene.scene_instructions()[10], # type: ignore
+            PlateBowlScene.get_scene_name(), # type: ignore
+            objects_of_interest=["akita_black_bowl_1", "akita_black_bowl_2", "akita_black_bowl_3"],
+            goal_states=PlateBowlScene.goal_states()[3] # type:ignore
+        )
+
+        register_task_info(
+            PlateBowlScene.scene_instructions()[11], # type: ignore
+            PlateBowlScene.get_scene_name(), # type: ignore
+            objects_of_interest=["akita_black_bowl_1", "akita_black_bowl_2", "akita_black_bowl_3"],
+            goal_states=PlateBowlScene.goal_states()[3] # type:ignore
+        )
+
+
         
 
 def main():
@@ -462,13 +590,7 @@ def main():
         goal_states=PlateCookieScene.goal_states()[0] # type:ignore
     )
 
-    register_task_info(
-        BowlCookieScene.scene_instructions()[0], # type: ignore
-        BowlCookieScene.get_scene_name(), # type: ignore
-        objects_of_interest=["akita_black_bowl_1", "akita_black_bowl_2", "akita_black_bowl_3"],
-        goal_states=BowlCookieScene.goal_states()[0] # type:ignore
-    )
-
+    PlateBowlScene.register_all() # type: ignore
 
     bddl_file_names, failures = generate_bddl_from_task_info(folder=GENERATED_BDDL_PATH)
     print(f"Generated {bddl_file_names}")

@@ -1,0 +1,77 @@
+(define (problem LIBERO_Kitchen_Tabletop_Manipulation)
+  (:domain robosuite)
+  (:language Pick up all black bowls and place them on the plate)
+    (:regions
+      (plate_region
+          (:target kitchen_table)
+          (:ranges (
+              (-0.2001 -0.0001 -0.19990000000000002 0.0001)
+            )
+          )
+          (:yaw_rotation (
+              (0.0 0.0)
+            )
+          )
+      )
+      (bowl_region_1
+          (:target kitchen_table)
+          (:ranges (
+              (-0.2001 -0.2001 -0.19990000000000002 -0.19990000000000002)
+            )
+          )
+          (:yaw_rotation (
+              (0.0 0.0)
+            )
+          )
+      )
+      (bowl_region_2
+          (:target kitchen_table)
+          (:ranges (
+              (-0.2001 0.19990000000000002 -0.19990000000000002 0.2001)
+            )
+          )
+          (:yaw_rotation (
+              (0.0 0.0)
+            )
+          )
+      )
+      (bowl_region_3
+          (:target kitchen_table)
+          (:ranges (
+              (-0.0001 -0.0001 0.0001 0.0001)
+            )
+          )
+          (:yaw_rotation (
+              (0.0 0.0)
+            )
+          )
+      )
+    )
+
+  (:fixtures
+    kitchen_table - kitchen_table
+  )
+
+  (:objects
+    plate_1 - plate
+    akita_black_bowl_1 akita_black_bowl_2 akita_black_bowl_3 - akita_black_bowl
+  )
+
+  (:obj_of_interest
+    akita_black_bowl_1
+    akita_black_bowl_2
+    akita_black_bowl_3
+  )
+
+  (:init
+    (On akita_black_bowl_1 kitchen_table_bowl_region_1)
+    (On akita_black_bowl_2 kitchen_table_bowl_region_2)
+    (On akita_black_bowl_3 kitchen_table_bowl_region_3)
+    (On plate_1 kitchen_table_plate_region)
+  )
+
+  (:goal
+    (And (On akita_black_bowl_1 plate_1) (On akita_black_bowl_2 plate_1) (On akita_black_bowl_3 plate_1))
+  )
+
+)

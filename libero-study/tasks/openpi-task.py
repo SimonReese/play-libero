@@ -13,7 +13,7 @@ import utils
 
 # Libero
 BENCHMARK_SUITE = "libero_spatial" # one from benchmark.BENCHMARK_MAPPING
-CUSTOM_TASK = "/home/peraro/source/play-libero/libero-study/tasks/PLATE_SCENE_pick_up_cookie_box_and_place_it_on_the_top_right_plate.bddl"
+CUSTOM_TASK = "/home/peraro/source/play-libero/libero-study/tasks/generated/PLATE_BOWL_SCENE_pick_up_the_central_black_bowl_and_place_it_on_the_plate.bddl"
 
 # Envs
 RENDER_ONSCREEN = True
