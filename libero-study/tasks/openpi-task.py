@@ -22,7 +22,7 @@ MAX_STEPS = 600
 CAMERA_SIZE = 224
 
 # Video
-VIDEO = True
+VIDEO = False
 VIDEO_PATH = "./videos/openpi/custom-tasks/"
 
 # Connection
@@ -68,7 +68,7 @@ def main():
                 robosuite.utils.transform_utils.quat2axisangle(obs["robot0_eef_quat"]),
                 obs["robot0_gripper_qpos"])
             ),
-            "prompt": task_env.language_instruction
+            "prompt":  "with respect to the front camera, pick the left plate" #task_env.language_instruction
         }
         # Get action
         action_chunk = remote_model.infer(observations)["actions"]

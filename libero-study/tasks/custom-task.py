@@ -1,16 +1,17 @@
 
+import re
 from typing import ClassVar, Dict, List, Tuple, Type
 
-from libero.libero.envs import objects
 from libero.libero.envs.predicates import VALIDATE_PREDICATE_FN_DICT
 from libero.libero.envs.base_object import OBJECTS_DICT
-from libero.libero.envs.bddl_base_domain import TASK_MAPPING
 from libero.libero.utils.bddl_generation_utils import get_xy_region_kwargs_list_from_regions_info
 from libero.libero.utils.mu_utils import MU_DICT, SCENE_DICT, InitialSceneTemplates, register_mu
 from libero.libero.utils.object_utils import get_affordance_regions
 from libero.libero.utils.task_generation_utils import TASK_INFO, TaskInfoTuple, generate_bddl_from_task_info, register_task_info
 import numpy
 
+
+GENERATED_BDDL_PATH = "/home/peraro/source/play-libero/libero-study/tasks"
 
 print("Objects:", OBJECTS_DICT.keys())
 print("Predicates:", VALIDATE_PREDICATE_FN_DICT.keys())
@@ -57,7 +58,15 @@ SCENE_DICT: Dict[str, Type[InitialSceneTemplates]]
 
 
 @register_mu(scene_type="kitchen")
-class PlateScene(InitialSceneTemplates):
+class DrawerPlateCookieScene(InitialSceneTemplates):
+    """
+        A scene with a cookiebox in a drawer and 9 plates
+
+        Plates scheme wrt agentview camera:
+            1 2 3 <--goal plate
+            4 5 6
+            7 8 9
+    """
 
     def __init__(self):
         fixtures = {
@@ -85,12 +94,7 @@ class PlateScene(InitialSceneTemplates):
             region_half_len=0.0001,
             yaw_rotation=(numpy.pi, numpy.pi)
         )
-        """
-            Plates scheme:
-                1 2 3
-                4 5 6
-                7 8 9
-        """
+
         # -----------------------------------
         PLATE_OFF = 0.15
         plate_region_1 = self.get_region_dict(
@@ -198,26 +202,47 @@ class PlateScene(InitialSceneTemplates):
             ("Open", "wooden_cabinet_1_top_region")
         ]
         return states
+    
+    @classmethod
+    def get_scene_name(cls) -> str:
+        """ Returns the class name in LIBERO format. Useful to have when registering the class"""
+        return "_".join(re.sub(r"([A-Z])", r" \1", cls.__name__).split()).lower()
+    
+    @classmethod
+    def scene_instructions(cls) -> List[str]:
+        """ Returns available task instructions for this scene"""
+        return [
+            "Pick up cookie box and place it on the top right plate"
+        ]
+        
 
-scene_name = "plate_scene"
-scene_language = "Pick up cookie box and place it on the top right plate"
-register_task_info(
-    scene_language,
-    scene_name,
-    objects_of_interest=["cookies_1"],
-    goal_states=[
-        ("On", "cookies_1", "plate_3")
-    ]
-)
+def main():
+
+    bddl_file_names = []
+    failures  = []
+ 
+    # Register DrawerPlateCookieScene
+    register_task_info(
+        DrawerPlateCookieScene.scene_instructions()[0], # type: ignore
+        DrawerPlateCookieScene.get_scene_name(), # type: ignore
+        objects_of_interest=["cookies_1"],
+        goal_states=[
+            ("On", "cookies_1", "plate_3")
+        ]
+    )
+
+    bddl_file_names, failures = generate_bddl_from_task_info(folder=GENERATED_BDDL_PATH)
+    print(f"Generated {bddl_file_names}")
+    print(f"Failures {failures}")
+
+
+
+
+if __name__ == "__main__":
+    main()
+
 
 print(f"MU_DICT: {MU_DICT}")
 print(f"SCENE_DICT: {SCENE_DICT}")
 print(f"TASK_INFO: {TASK_INFO}")
-
-TEMP_BDDL_PATH = "/home/peraro/source/play-libero/libero-study/tasks"
-bddl_file_names, failures = generate_bddl_from_task_info(folder=TEMP_BDDL_PATH)
-print(failures)
-print(bddl_file_names)
-
-
 print(get_affordance_regions(OBJECTS_DICT, True))
