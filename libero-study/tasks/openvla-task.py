@@ -1,177 +1,41 @@
 import collections
-import os
-from typing import Dict, Generator, List, Tuple, Type
+from typing import List
 
-import imageio
 import numpy
-from libero.libero import benchmark
-from libero.libero.benchmark import Benchmark, Task
-from libero.libero.envs.env_wrapper import ControlEnv, OffScreenRenderEnv
 from openpi_client import image_tools
 
 import requests
 import json_numpy
+
+import utils
 json_numpy.patch()
 
+# Libero
 BENCHMARK_SUITE = "libero_spatial" # one from benchmark.BENCHMARK_MAPPING
-HEADLESS = False
-VIDEO = True
-VIDEO_PATH = "./videos/openvla/custom-tasks/"
+CUSTOM_TASK = "/home/peraro/source/play-libero/libero-study/tasks/PLATE_SCENE_pick_up_cookie_box_and_place_it_on_the_top_right_plate.bddl"
+
+# Envs
+RENDER_ONSCREEN = True
 MAX_STEPS = 600
 CAMERA_NAME = "agentview"
 CAMERA_SIZE = 224
+
+# Video
+VIDEO = True
+VIDEO_PATH = "./videos/openvla/custom-tasks/"
+
+# Connection
 TITAN_IP = "titan2.dei.unipd.it"
 TITAN_PORT = 8000
+
+# Action
 DUMMY_ACTION = [0.] * 7
-CUSTOM_TASK = "/home/peraro/source/play-libero/libero-study/tasks/PLATE_SCENE_pick_up_cookie_box_and_place_it_on_the_top_right_plate.bddl"
-
-
-def normalize_gripper_action(old_action: numpy.ndarray, binarize=True):
-    action = numpy.copy(old_action)
-    """ From https://github.com/openvla/openvla/blob/main/experiments/robot/robot_utils.py#L75
-
-    Changes gripper action (last dimension of action vector) from [0,1] to [-1,+1].
-    Necessary for some environments (not Bridge) because the dataset wrapper standardizes gripper actions to [0,1].
-    Note that unlike the other action dimensions, the gripper action is not normalized to [-1,+1] by default by
-    the dataset wrapper.
-
-    Normalization formula: y = 2 * (x - orig_low) / (orig_high - orig_low) - 1
-    """
-    # Just normalize the last action to [-1,+1].
-    orig_low, orig_high = 0.0, 1.0
-    action[..., -1] = 2 * (action[..., -1] - orig_low) / (orig_high - orig_low) - 1
-
-    if binarize:
-        # Binarize to -1 or +1.
-        action[..., -1] = numpy.sign(action[..., -1])
-
-    return action
-
-def invert_gripper_action(action):
-    """ From https://github.com/openvla/openvla/blob/main/experiments/robot/robot_utils.py#L95
-
-    Flips the sign of the gripper action (last dimension of action vector).
-    This is necessary for some environments where -1 = open, +1 = close, since
-    the RLDS dataloader aligns gripper actions such that 0 = close, 1 = open.
-    """
-    action[..., -1] = action[..., -1] * -1.0
-    return action
-
-def load_task(benchmark_suite: str, task_id: int) -> Tuple[Benchmark, Task]:
-    ''' Load a spedfic task from a specific benchmark of LIBERO
-
-        Parameters
-        -------------- 
-        benchmark_suite: str
-            The benchmark/task suite to load. Available benchmarks are:
-
-                `libero_spatial`
-                    for spatial understaning, same task different objects
-                `libero_object`
-                    different layout with same objects
-                `libero_goal`
-                    different goal, same layout and objs
-                `libero_90` 
-                    training set of `libero_100`
-                `libero_10`
-                    eval set of `libero_100`
-                `libero_100`
-                    different objects, layouts and scenes
-        task_id: int
-            The id of the task to load
-
-        Returns
-        -------
-        A Tuple[Benchmark, Task] or a generated list of Tuple[Benchmark, Task] for each possible task.
-
-        A Task object is simply a tuple of:
-        - `name`: task name (_ separated)
-        - `language`: tasbenchmark.k lang instruction
-        - `problem`: libero tasks are under `libero` problem
-        - `problem_folder`: the specific `libero_benckmark` folder name
-        - `bddl_file`: the full .bbdl file name (no path)
-        - `init_states_file`: the .init file name for the task
-    '''
-    
-    benchmark_dict: Dict[str, Type[Benchmark]] = benchmark.get_benchmark_dict()
-    ''' The `benchmark_dict` (mapped with the variable `benchmark.BENCHMARK_MAPPING`) 
-        containst the available Libero Benchmarks Suites, that are:
-        - `libero_spatial` : for spatial understaning, same task different objects
-        - `libero_object`: different layaot with same objects
-        - `libero_goal` : different goal, same layout and objs
-        - `libero_90` : training set of `libero_100`
-        - `libero_10` : eval set of `libero_100`
-        - `libero_100` : different objects, layouts and scenes 
-    '''
-
-    task_suite: Benchmark = benchmark_dict[benchmark_suite]()
-    '''`task_suite` will be an instance of one of the available Benchmarks classes
-        Each benchmark has 10 tasks, except `benchmark.LIBERO_90` which has 90 tasks
-    '''
-
-    # Print information about the selected benchmark
-    print(f"Loaded: {task_suite}, {task_suite.get_num_tasks()} tasks available")
-    print(f"Available tasks: {task_suite.get_task_names()}")
-
-    # Load a specific task
-    task: Task = task_suite.get_task(task_id)
-    return task_suite, task
-
-def load_tasks(benchmark_suite: str) -> Generator[Tuple[Benchmark, Task], None, None]:
-    # Return the first task
-    task_suite, task = load_task(benchmark_suite, 0)
-    yield task_suite, task
-    # Generate and return all the remaining tasks
-    for task_id in range(1, task_suite.get_num_tasks()):
-        task = task_suite.get_task(task_id)
-        yield task_suite, task
-
-def load_tasks_from(benchmark_suite: str, from_id: int) -> Generator[Tuple[Benchmark, Task], None, None]:
-     # Return the first task
-    task_suite, task = load_task(benchmark_suite, from_id)
-    yield task_suite, task
-    # Generate and return all the remaining tasks
-    for task_id in range(from_id + 1, task_suite.get_num_tasks()):
-        task = task_suite.get_task(task_id)
-        yield task_suite, task
-
-def load_environment(task: Task, BDDL_FILE = "") -> ControlEnv:
-    # Load bddl file
-    if BDDL_FILE == "":
-        BDDL_FILE_PATH = os.path.join(benchmark.get_libero_path("bddl_files"), task.problem_folder, task.bddl_file)
-    #print(f"Attempting to open {BDDL_FILE_PATH}")
-    else: 
-        BDDL_FILE_PATH = BDDL_FILE
-
-    env_args = {
-        "bddl_file_name": BDDL_FILE_PATH,
-        "camera_heights": CAMERA_SIZE,
-        "camera_widths": CAMERA_SIZE
-    }
-
-    if HEADLESS:
-        env = OffScreenRenderEnv(**env_args)
-    else:
-        env = ControlEnv(BDDL_FILE_PATH, 
-                         has_renderer=True, # On screen view
-                         has_offscreen_renderer=True, # If camera or headless, an offscreen is required
-                         render_camera=CAMERA_NAME,
-                         camera_heights=CAMERA_SIZE,
-                         camera_widths=CAMERA_SIZE
-                         )
-    return env
-
-def save_video(frame_buffer: List[numpy.ndarray], filename = "playback.mp4", fps = 30):
-    video_writer = imageio.get_writer(f"{VIDEO_PATH}{filename}", fps=fps)
-    for frame in frame_buffer:
-        video_writer.append_data(frame)
-    video_writer.close()
 
 
 def main():
 
     # Load task environment
-    task_env = load_environment(None, CUSTOM_TASK)
+    task_env = utils.libero.load_environment(None, CUSTOM_TASK)
     # Reset env
     task_env.seed(0)
     obs: collections.OrderedDict = task_env.reset()
@@ -202,24 +66,21 @@ def main():
             url=f"http://{TITAN_IP}:{TITAN_PORT}/act",
             json=observations
         ).json()
-        # Trasform action to libero env
-        action = normalize_gripper_action(action)
-        action = invert_gripper_action(action)
 
-        if not HEADLESS: task_env.env.render()
+        # Trasform action to libero env
+        action = utils.model.normalize_gripper_action(action)
+        action = utils.model.invert_gripper_action(action)
+
+        if RENDER_ONSCREEN: task_env.env.render()
         if VIDEO: frame_buffer.append(front_img)
         if step % 10 == 0: print("*", end="", flush=True)
         
         # Perform action
-        try:
-            obs, reward, done, info = task_env.step(action.tolist())
-        except:
-            break
+        obs, reward, done, info = task_env.step(action.tolist())
 
-    print(f"Observations: {obs.keys()}")
     task_env.close()
 
-    if VIDEO: save_video(frame_buffer, filename=f"{task_env.problem_name}.mp4")
+    if VIDEO: utils.libero.save_video(frame_buffer, path=VIDEO_PATH, filename=f"{task_env.problem_name}.mp4")
     
 if __name__ == "__main__":
     main()
